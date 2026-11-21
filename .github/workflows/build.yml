@@ -39,6 +39,7 @@ jobs:
           python3 apply_glass.py src
           python3 apply_remove.py src
           python3 apply_glass2.py src
+          python3 apply_social.py src
 
       - name: Accept SDK licenses
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
