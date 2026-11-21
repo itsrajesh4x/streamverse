@@ -37,6 +37,8 @@ jobs:
           pip install pillow numpy
           python3 apply.py src logo_source.png
           python3 apply_glass.py src
+          python3 apply_remove.py src
+          python3 apply_glass2.py src
 
       - name: Accept SDK licenses
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
@@ -82,4 +84,3 @@ jobs:
           tag_name: build-${{ github.run_number }}
           name: StreamVerse build ${{ github.run_number }}
           files: StreamVerse.apk
-          
