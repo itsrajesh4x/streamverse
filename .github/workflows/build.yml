@@ -1,0 +1,85 @@
+name: Build StreamVerse
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+env:
+  UPSTREAM_REPO: https://github.com/recloudstream/cloudstream.git
+  # exact commit your uploaded source came from
+  UPSTREAM_COMMIT: 2dcc25c3945c61dfa95d1710ced7c74acfe84baa
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Get CloudStream source
+        run: |
+          git clone "$UPSTREAM_REPO" src
+          git -C src checkout "$UPSTREAM_COMMIT"
+
+      - name: Apply StreamVerse patch (name, icon, splash, liquid glass)
+        run: |
+          pip install pillow numpy
+          python3 apply.py src logo_source.png
+          python3 apply_glass.py src
+
+      - name: Accept SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+
+      - name: Build release APK
+        working-directory: src
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleStableRelease --no-daemon --stacktrace
+
+      - name: Sign APK
+        env:
+          SV_KEYSTORE_BASE64: ${{ secrets.SV_KEYSTORE_BASE64 }}
+          SV_KEYSTORE_PASSWORD: ${{ secrets.SV_KEYSTORE_PASSWORD }}
+          SV_KEY_ALIAS: ${{ secrets.SV_KEY_ALIAS }}
+        run: |
+          set -e
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          APK=$(find src/app/build/outputs/apk/stable/release -name '*.apk' | head -1)
+          echo "Built: $APK"
+          if [ -n "$SV_KEYSTORE_BASE64" ]; then
+            echo "$SV_KEYSTORE_BASE64" | base64 -d > sv.jks
+            PASS="$SV_KEYSTORE_PASSWORD"; ALIAS="$SV_KEY_ALIAS"
+          else
+            echo "::warning::No signing secrets found - using a temporary key. Updates will NOT install over older builds. Add the SV_* secrets."
+            PASS=$(openssl rand -hex 16); ALIAS=streamverse
+            keytool -genkeypair -keystore sv.jks -storetype PKCS12 -alias "$ALIAS" -keyalg RSA -keysize 2048 \
+              -validity 10000 -storepass "$PASS" -keypass "$PASS" -dname "CN=StreamVerse, O=StreamVerse, C=IN"
+          fi
+          "$BT/zipalign" -p -f 4 "$APK" aligned.apk
+          "$BT/apksigner" sign --ks sv.jks --ks-pass "pass:$PASS" --key-pass "pass:$PASS" \
+            --ks-key-alias "$ALIAS" --out StreamVerse.apk aligned.apk
+          "$BT/apksigner" verify --print-certs StreamVerse.apk | head -3
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StreamVerse-apk
+          path: StreamVerse.apk
+
+      - name: Publish release (download link for your phone)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: StreamVerse build ${{ github.run_number }}
+          files: StreamVerse.apk
+          
