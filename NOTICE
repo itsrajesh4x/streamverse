@@ -1,0 +1,3 @@
+StreamVerse is a modified version of CloudStream (https://github.com/recloudstream/cloudstream),
+licensed under GPL-3.0. This repository holds the modifications (apply.py) and build workflow.
+If you distribute the APK, keep this repository public (or provide the source) and keep this notice.
