@@ -48,6 +48,7 @@ jobs:
           python3 apply_fast_home_loading.py src
           python3 apply_content_filter.py src
           python3 apply_no_anime_autodownload.py src
+          python3 apply_app_name.py src
 
       - name: Accept SDK licenses
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
