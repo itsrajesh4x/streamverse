@@ -10,7 +10,6 @@ permissions:
 
 env:
   UPSTREAM_REPO: https://github.com/recloudstream/cloudstream.git
-  # exact commit your uploaded source came from
   UPSTREAM_COMMIT: 2dcc25c3945c61dfa95d1710ced7c74acfe84baa
 
 jobs:
@@ -49,6 +48,7 @@ jobs:
           python3 apply_content_filter.py src
           python3 apply_no_anime_autodownload.py src
           python3 apply_app_name.py src
+          python3 apply_hindi_audio_download.py src
 
       - name: Accept SDK licenses
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
