@@ -50,6 +50,9 @@ jobs:
           python3 apply_app_name.py src
           python3 apply_hindi_audio_download.py src
           python3 apply_streamverse_features.py src
+          python3 apply_nav_red_glow.py src
+          python3 apply_result_glass_panel.py src
+          python3 apply_double_tap_default.py src
 
       - name: Accept SDK licenses
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
