@@ -7,12 +7,12 @@ path = root / "app/src/main/java/com/lagradost/cloudstream3/utils/downloader/Dow
 s = path.read_text(encoding="utf-8")
 
 helper = '''
-// StreamVerse: accept only links explicitly labelled as containing Hindi audio.
-// Provider language and Hindi subtitles are not proof of Hindi audio.
+// StreamVerse: prefer links labelled as Hindi audio (name or provider).
+// If none are labelled, callers fall back to all links.
 private fun isStreamVerseHindiAudio(link: ExtractorLink): Boolean {
-    val label = link.name.lowercase()
-    return Regex("""(^|[^a-z])hindi([^a-z]|$)|हिंदी""", RegexOption.IGNORE_CASE)
-        .containsMatchIn(label)
+    val text = "${link.name} ${link.source}".lowercase()
+    return Regex("""(^|[^a-z])(hindi|hin|hi-in|dual audio|multi audio)([^a-z]|$)|हिंदी""")
+        .containsMatchIn(text)
 }
 
 '''
@@ -34,13 +34,13 @@ new = '''        private fun downloadEpisodeWithLinks(
             subs: List<SubtitleData>?
         ) {
             val downloadItem = downloadQueueWrapper.downloadItem ?: return
-            val hindiLinks = links.filter { isStreamVerseHindiAudio(it) }
+            val hindiLinks = links.filter { isStreamVerseHindiAudio(it) }.ifEmpty { links }
             if (hindiLinks.isEmpty()) {
                 isFailed = true
                 return
             }
             try {'''
-if "val hindiLinks = links.filter { isStreamVerseHindiAudio(it) }" not in s:
+if "val hindiLinks = links.filter" not in s:
     if old not in s:
         raise SystemExit("Download link filter insertion point not found")
     s = s.replace(old, new, 1)
@@ -59,14 +59,16 @@ old3 = '''            // Wait for link loading completion
 new3 = '''            // Wait for link loading completion
             linkLoadingJob?.join()
 
-            // Reject generated links without an explicit Hindi audio label.
-            currentLinks.removeAll { !isStreamVerseHindiAudio(it) }
+            // Keep only Hindi-labelled links, but only if at least one exists.
+            if (currentLinks.any { isStreamVerseHindiAudio(it) }) {
+                currentLinks.removeAll { !isStreamVerseHindiAudio(it) }
+            }
 
             // Remove link loading notification'''
-if "currentLinks.removeAll { !isStreamVerseHindiAudio(it) }" not in s:
+if "if (currentLinks.any { isStreamVerseHindiAudio(it) })" not in s:
     if old3 not in s:
         raise SystemExit("Generated-link filter insertion point not found")
     s = s.replace(old3, new3, 1)
 
 path.write_text(s, encoding="utf-8")
-print("SUCCESS: Hindi-audio download gate applied")
+print("SUCCESS: Hindi-audio download preference applied")
