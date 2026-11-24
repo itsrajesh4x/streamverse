@@ -53,6 +53,8 @@ jobs:
           python3 apply_nav_red_glow.py src
           python3 apply_result_glass_panel.py src
           python3 apply_double_tap_default.py src
+          python3 apply_provider_hide.py src
+          python3 apply_provider_test_hide.py src
 
       - name: Accept SDK licenses
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
