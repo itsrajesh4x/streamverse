@@ -55,6 +55,7 @@ jobs:
           python3 apply_double_tap_default.py src
           python3 apply_provider_hide.py src
           python3 apply_provider_test_hide.py src
+          python3 apply_donation_guard.py src
 
       - name: Accept SDK licenses
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
